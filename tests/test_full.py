@@ -1,9 +1,8 @@
-import sys
 import unittest
 from unittest.mock import MagicMock, patch
 
-from src import strongpatch
 import tests.fnsource as fnsource
+from src import strongpatch
 from tests.fnsource import generic, pair, pairgeneric, plain
 
 
@@ -23,16 +22,16 @@ class TestBasicObjectPatching(unittest.TestCase):
     def test_float_patch_0(self):
         if 100.0 != 101.0:
             raise RuntimeError("FLOAT PATCH FAILED")
-    
+
     def test_float_patch_1_after(self):
         if 100.0 == 101.0:
             raise RuntimeError("FLOAT PATCH REMOVAL FAILED")
-        
+
     @strongpatch.equal_basic_objects(False, True)
     def test_truefalse_patch_0(self):
         if True != False:
             raise RuntimeError("TRUEFALSE PATCH FAILED")
-        
+
     def test_truefalse_patch_1_after(self):
         if True == False:
             raise RuntimeError("TRUEFALSE PATCH REMOVAL FAILED")
@@ -41,7 +40,7 @@ class TestBasicObjectPatching(unittest.TestCase):
     def test_int_patch_0(self):
         if 37838 != 2673229:
             raise RuntimeError("INT PATCH FAILED")
-    
+
     def test_int_patch_1_after(self):
         if 37838 == 2673229:
             raise RuntimeError("INT PATCH REMOVAL FAILED")
@@ -58,7 +57,7 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(plain(), "MOCKED")
 
     @strongpatch("tests.fnsource.plain")
-    def test_plain_2_mockwork(self, mockplain):
+    def test_plain_2_mockwork(self, _):
         self.assertIsInstance(plain(), MagicMock)
 
     @strongpatch.object(fnsource, "plain")

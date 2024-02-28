@@ -9,15 +9,9 @@
 fnsrc = lambda b, *_,a="a", **__: print("LOL")
 import inspect
 
-
-for 
-print()
-
-
 quit()
 
 import dis
-
 
 lambda_store = [lambda *_, __replacementfunc__=fnsrc, **__: __replacementfunc__(*_, **__)]
 l_replacement = lambda_store[0]

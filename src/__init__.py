@@ -1,8 +1,9 @@
+import inspect
+import pkgutil
 from ctypes import memmove
 from functools import wraps
-import pkgutil
-import inspect
-from unittest.mock import _patch, _patch_dict, DEFAULT, _get_target, partial
+from unittest.mock import DEFAULT, _get_target, _patch, _patch_dict, mock, partial
+
 
 def _memmove_replacement(objsrc, objdst):
     # Replace the code object with memset
@@ -95,8 +96,6 @@ class _strongpatch(_patch):
         self.original__kwdefaults__ = fndest.__kwdefaults__
 
         # Change fndest
-        if hasattr(fndest, "__self__"):
-            delattr(fndest, "__self__")
         fndest.__defaults__ = l_replacement.__defaults__
         fndest.__kwdefaults__ = l_replacement.__kwdefaults__
 
@@ -105,8 +104,6 @@ class _strongpatch(_patch):
 
     def restore_fn_code(self, fndest):
         if hasattr(self, "strong_mock_level") and self.strong_mock_level:
-            if self.original__self__ is not None:
-                setattr(fndest, "__self__", self.original__self__)
             fndest.__defaults__ = self.original__defaults__
             fndest.__kwdefaults__ = self.original__kwdefaults__
             _memmove_unreplacement(*self.memmove_backup, fndest.__code__)
@@ -118,12 +115,12 @@ def _strongpatch_object(
     ):
     if type(target) is str:
         raise TypeError(
-            f"{target!r} must be the actual object to be patched, not a str"
+            f"{target!r} must be the actual object to be patched, not a str",
         )
     getter = lambda: target
     return _strongpatch(
         getter, attribute, new, spec, create,
-        spec_set, autospec, new_callable, kwargs
+        spec_set, autospec, new_callable, kwargs,
     )
 
 def _strongpatch_multiple(target, spec=None, create=False, spec_set=None,
@@ -135,20 +132,20 @@ def _strongpatch_multiple(target, spec=None, create=False, spec_set=None,
 
     if not kwargs:
         raise ValueError(
-            'Must supply at least one keyword argument with patch.multiple'
+            "Must supply at least one keyword argument with patch.multiple",
         )
     # need to wrap in a list for python 3, where items is a view
     items = list(kwargs.items())
     attribute, new = items[0]
     patcher = _strongpatch(
         getter, attribute, new, spec, create, spec_set,
-        autospec, new_callable, {}
+        autospec, new_callable, {},
     )
     patcher.attribute_name = attribute
     for attribute, new in items[1:]:
         this_patcher = _strongpatch(
             getter, attribute, new, spec, create, spec_set,
-            autospec, new_callable, {}
+            autospec, new_callable, {},
         )
         this_patcher.attribute_name = attribute
         patcher.additional_patchers.append(this_patcher)
@@ -166,10 +163,8 @@ def _strongpatch_equal_basic_objects(objsrc, objdst):
         @wraps(fn)
         def wrappedfn(*_, **__):
             memmove_backup = _memmove_replacement(objsrc, objdst)
-            errlist = []
             try:
-                output = fn(*_, **__)
-                return output
+                return fn(*_, **__)
             except:
                 raise
             finally:
@@ -181,5 +176,5 @@ strongpatch.object = _strongpatch_object
 strongpatch.dict = _patch_dict
 strongpatch.multiple = _strongpatch_multiple
 strongpatch.stopall = _strongpatch_stopall
-strongpatch.TEST_PREFIX = 'test'
+strongpatch.TEST_PREFIX = mock.TEST_PREFIX
 strongpatch.equal_basic_objects = _strongpatch_equal_basic_objects
