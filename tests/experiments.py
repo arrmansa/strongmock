@@ -1,8 +1,24 @@
-# Used rescources 
+# noqa: T201, ERA001
+# Used rescources
 # https://stackoverflow.com/questions/54602320/correctly-replace-a-functions-code-object
 # https://docs.python.org/3/reference/datamodel.html#the-standard-type-hierarchy
 # https://github.com/arrmansa/modify-tuples-strings-inplace-python/blob/main/final_functions.py
 # https://docs.python.org/3/library/inspect.html
+# coverage run --source=src -m unittest discover --v
+
+class methodstest:
+    @staticmethod
+    def a():
+        pass
+
+    @classmethod
+    def b(cls):
+        pass
+
+    def c(self):
+        pass
+
+print(methodstest.b.__self__, methodstest().c.__self__)
 
 
 def dog():
@@ -40,7 +56,8 @@ print(id(dog.__code__.co_freevars), id(dog.__code__))
 
 
 from ctypes import memmove
-catsnew = lambda *_, __replacementfunc__=cats, **__: __replacementfunc__()
+
+catsnew = lambda *_, __replacementfunc__=cats, **__: __replacementfunc__()  # noqa: E731
 
 catsnew()
 print("A"*10)
