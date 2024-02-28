@@ -21,6 +21,10 @@ Same as `patch.object`, but does the same advanced replacement as `strongpatch`
 ### `strongpatch.multiple`
 Same as `patch.multiple`, but does the same advanced replacement as `strongpatch`
 
+# Async
+
+Also works on async functions, with similar stronger patching
+
 # Safety
 
 Some care has been taken to avoid crashes and breakage, but the user does have full control. One word answer - no.

@@ -14,3 +14,6 @@ def pair(somefn):
 
 
 pairgeneric = pair(generic)
+
+async def asyncplain():
+    return "ORIGINAL"

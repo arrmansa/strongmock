@@ -3,18 +3,43 @@ from unittest.mock import MagicMock, patch
 
 import tests.fnsource as fnsource
 from src import strongpatch
-from tests.fnsource import generic, pair, pairgeneric, plain
+from tests.fnsource import generic, pair, pairgeneric, plain, asyncplain
 
 
 def plainmock():
     return "MOCKED"
 
+async def asyncplainmock():
+    return "MOCKED"
 
 def genericmock(a, *args, b="d", c="c", **kwargs):
     return a + "MOCKED" + b + c + str((args, kwargs))
 
 
 pairgenericmock = pair(genericmock)
+
+
+
+class TestBasic(unittest.TestCase):
+
+    @patch("tests.fnsource.plain", plainmock)
+    def test_plain_0_mockfail(self):
+        self.assertEqual(plain(), "ORIGINAL")
+
+    @strongpatch("tests.fnsource.plain", plainmock)
+    def test_plain_1_mockwork(self):
+        self.assertEqual(plain(), "MOCKED")
+
+    @strongpatch("tests.fnsource.plain")
+    def test_plain_2_mockwork(self, _):
+        self.assertIsInstance(plain(), MagicMock)
+
+    @strongpatch.object(fnsource, "plain")
+    def test_plain_3_mockobjectwork(self, _):
+        self.assertIsInstance(plain(), MagicMock)
+
+    def test_plain_4_after(self):
+        self.assertEqual(plain(), "ORIGINAL")
 
 class TestBasicObjectPatching(unittest.TestCase):
 
@@ -44,28 +69,6 @@ class TestBasicObjectPatching(unittest.TestCase):
     def test_int_patch_1_after(self):
         if 37838 == 2673229:
             raise RuntimeError("INT PATCH REMOVAL FAILED")
-
-
-class TestBasic(unittest.TestCase):
-
-    @patch("tests.fnsource.plain", plainmock)
-    def test_plain_0_mockfail(self):
-        self.assertEqual(plain(), "ORIGINAL")
-
-    @strongpatch("tests.fnsource.plain", plainmock)
-    def test_plain_1_mockwork(self):
-        self.assertEqual(plain(), "MOCKED")
-
-    @strongpatch("tests.fnsource.plain")
-    def test_plain_2_mockwork(self, _):
-        self.assertIsInstance(plain(), MagicMock)
-
-    @strongpatch.object(fnsource, "plain")
-    def test_plain_3_mockobjectwork(self, _):
-        self.assertIsInstance(plain(), MagicMock)
-
-    def test_plain_4_after(self):
-        self.assertEqual(plain(), "ORIGINAL")
 
 
 class TestArgsKwargs(unittest.TestCase):
@@ -122,6 +125,23 @@ class TestClosurePair(unittest.TestCase):
         self.assertEqual(pairgeneric("a"), "aORIGINALb((), {})" * 2)
         self.assertEqual(pairgeneric("a", b="c"), "aORIGINALc((), {})" * 2)
         self.assertEqual(pairgeneric("a", "x", b="c", y="z"), "aORIGINALc(('x',), {'y': 'z'})" * 2)
+
+
+class TestAsyncPlain(unittest.IsolatedAsyncioTestCase):
+
+    async def test_async_plain_0_before(self):
+        self.assertEqual(await asyncplain(), "ORIGINAL")
+
+    @patch("tests.fnsource.asyncplain", asyncplainmock)
+    async def test_async_plain_1_normal(self):
+        self.assertEqual(await asyncplain(), "ORIGINAL")
+    
+    @strongpatch("tests.fnsource.asyncplain", asyncplainmock)
+    async def test_async_plain_2_strong(self):
+        self.assertEqual(await asyncplain(), "MOCKED")
+
+    async def test_async_plain_4_after(self):
+        self.assertEqual(await asyncplain(), "ORIGINAL")
 
 
 if __name__ == "__main__":
