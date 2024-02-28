@@ -4,15 +4,22 @@ from unittest.mock import DEFAULT, _get_target, _patch
 
 
 def strongpatch(
-        target, new=DEFAULT, spec=None, create=False,
-        spec_set=None, autospec=None, new_callable=None, **kwargs,
-    ):
+    target,
+    new=DEFAULT,
+    spec=None,
+    create=False,
+    spec_set=None,
+    autospec=None,
+    new_callable=None,
+    **kwargs,
+):
 
     getter, attribute = _get_target(target)
     return _strongpatch(
         getter, attribute, new, spec, create,
         spec_set, autospec, new_callable, kwargs,
     )
+
 
 class _strongpatch(_patch):
 
@@ -23,9 +30,7 @@ class _strongpatch(_patch):
             self.autospec, self.new_callable, self.kwargs,
         )
         patcher.attribute_name = self.attribute_name
-        patcher.additional_patchers = [
-            p.copy() for p in self.additional_patchers
-        ]
+        patcher.additional_patchers = [p.copy() for p in self.additional_patchers]
         return patcher
 
     def __enter__(self):
@@ -48,7 +53,7 @@ class _strongpatch(_patch):
         """
         self.strong_mock_level = True
         # A non-closure lambda function with __replacementfunc__ kwarg that will be the __code__ donor
-        self.lambda_store = [lambda *_, __replacementfunc__=fnsrc, **__ : __replacementfunc__(*_, **__)]
+        self.lambda_store = [lambda *_, __replacementfunc__=fnsrc, **__: __replacementfunc__(*_, **__)]
         l_replacement = self.lambda_store[0]
 
         # Store original defaults
@@ -64,8 +69,8 @@ class _strongpatch(_patch):
 
         # Replace the code object with memset
         self.code_size = max(fndest.__code__.__sizeof__(), l_replacement.__code__.__sizeof__())
-        self.code_byte_storage = bytes([255]*(self.code_size+1))
-        self.offset = self.code_byte_storage.__sizeof__() - self.code_size # 33
+        self.code_byte_storage = bytes([255] * (self.code_size + 1))
+        self.offset = self.code_byte_storage.__sizeof__() - self.code_size  # 33
         memmove(id(self.code_byte_storage) + self.offset, id(fndest.__code__), self.code_size)
         memmove(id(self.temp_original.__code__), id(l_replacement.__code__), self.code_size)
 

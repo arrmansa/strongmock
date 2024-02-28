@@ -1,6 +1,6 @@
 [project]
 name = "strongmock"
-version = "0.0.1"
+version = "0.0.2"
 authors = [
   { name="Arrman Anicket Saha", email="arrmansa99+430@gmail.com" },
 ]
@@ -9,7 +9,7 @@ readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: Apache Software License",
+    "License :: OSI Approved :: The Unlicense (Unlicense)",
     "Operating System :: OS Independent",
 ]
 [build-system]
