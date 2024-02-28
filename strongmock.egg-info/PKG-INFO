@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: strongmock
-Version: 0.0.3
+Version: 0.0.4
 Summary: StrongMock is a powerful mocking library for Python that leverages low-level ctypes functionality to provide extensive mocking capabilities. Some care may be needed while using this.
 Author-email: Arrman Anicket Saha <arrmansa99+430@gmail.com>
 Project-URL: Homepage, https://github.com/arrmansa/strongmock
@@ -34,6 +34,10 @@ Same as `patch.object`, but does the same advanced replacement as `strongpatch`
 
 ### `strongpatch.multiple`
 Same as `patch.multiple`, but does the same advanced replacement as `strongpatch`
+
+# Async
+
+Also works on async functions, with similar stronger patching
 
 # Safety
 
