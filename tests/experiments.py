@@ -6,6 +6,52 @@
 # https://docs.python.org/3/library/inspect.html
 # coverage run --source=src -m unittest discover --v
 
+fnsrc = lambda b, *_,a="a", **__: print("LOL")
+import inspect
+
+
+for 
+print()
+
+
+quit()
+
+import dis
+
+
+lambda_store = [lambda *_, __replacementfunc__=fnsrc, **__: __replacementfunc__(*_, **__)]
+l_replacement = lambda_store[0]
+dis.dis(l_replacement)
+print(l_replacement.__code__.__sizeof__())
+
+
+lambda_store = [lambda __replacementfunc__=fnsrc, **__: __replacementfunc__(**__)]
+l_replacement = lambda_store[0]
+dis.dis(l_replacement)
+print(l_replacement.__code__.__sizeof__())
+
+
+lambda_store = [lambda *_, __replacementfunc__=fnsrc: __replacementfunc__(*_)]
+l_replacement = lambda_store[0]
+dis.dis(l_replacement)
+print(l_replacement.__code__.__sizeof__())
+
+quit()
+
+"""
+class some:
+    def fn(self, *_, **__):
+        self(*_, **__)
+l_replacement = some().fn#lambda_store[0]
+l_replacement.__self__ = fnsrc
+"""
+
+#lambda_store = [lambda x=fnsrc: x()]
+#l_replacement = lambda_store[0]#some().fn#lambda_store[0]
+dis.dis(l_replacement)
+print(l_replacement.__code__.__sizeof__())
+
+quit()
 from ctypes import memmove
 
 objdst = 100.1

@@ -6,12 +6,12 @@ from unittest.mock import _patch, _patch_dict, DEFAULT, _get_target, partial
 
 def _memmove_replacement(objsrc, objdst):
     # Replace the code object with memset
-    code_size = max(objsrc.__sizeof__(), objdst.__sizeof__())
-    code_byte_storage = bytes([255] * (code_size + 1))
-    offset = code_byte_storage.__sizeof__() - code_size  # 33
-    memmove(id(code_byte_storage) + offset, id(objdst), code_size)
-    memmove(id(objdst), id(objsrc), code_size)
-    return code_size, code_byte_storage
+    obj_size = objsrc.__sizeof__()
+    dstobj_byte_storage = bytes([255] * (obj_size + 1))
+    offset = dstobj_byte_storage.__sizeof__() - obj_size  # 33
+    memmove(id(dstobj_byte_storage) + offset, id(objdst), obj_size)
+    memmove(id(objdst), id(objsrc), obj_size)
+    return obj_size, dstobj_byte_storage
 
 def _memmove_unreplacement(objsize, dst_byte_storage, objdst):
     offset = dst_byte_storage.__sizeof__() - objsize
@@ -31,22 +31,14 @@ def get_definition_requirements(fnsrc):
     return position_needed, keyword_needed
 
 def strongpatch(
-    target,
-    new=DEFAULT,
-    spec=None,
-    create=False,
-    spec_set=None,
-    autospec=None,
-    new_callable=None,
-    **kwargs,
+    target, new=DEFAULT, spec=None, create=False,
+    spec_set=None, autospec=None, new_callable=None, **kwargs,
 ):
-
     getter, attribute = _get_target(target)
     return _strongpatch(
         getter, attribute, new, spec, create,
         spec_set, autospec, new_callable, kwargs,
     )
-
 
 class _strongpatch(_patch):
 
@@ -96,6 +88,7 @@ class _strongpatch(_patch):
             self.lambda_store = [lambda __replacementfunc__=fnsrc: __replacementfunc__()]
         l_replacement = self.lambda_store[0]
 
+
         # Store original defaults
         self.original__self__ = getattr(fndest, "__self__", None)
         self.original__defaults__ = fndest.__defaults__
@@ -121,7 +114,7 @@ class _strongpatch(_patch):
 def _strongpatch_object(
         target, attribute, new=DEFAULT, spec=None,
         create=False, spec_set=None, autospec=None,
-        new_callable=None, *, unsafe=False, **kwargs
+        new_callable=None, *, unsafe=False, **kwargs,
     ):
     if type(target) is str:
         raise TypeError(
@@ -166,9 +159,9 @@ def _strongpatch_stopall():
     for patch in reversed(_strongpatch._active_patches):
         patch.stop()
 
-def _strongpatch_equal_basic_objects(objdst, objsrc):
-    if objdst.__sizeof__() > objsrc.__sizeof__():
-        raise RuntimeWarning("objsrc is bigger than objdst. This may cause segfaults. Continue Anyways?")
+def _strongpatch_equal_basic_objects(objsrc, objdst):
+    if objdst.__sizeof__() < objsrc.__sizeof__():
+        raise RuntimeWarning("objsrc is bigger than objdst. This may cause segfaults")
     def decorator(fn):
         @wraps(fn)
         def wrappedfn(*_, **__):
@@ -177,14 +170,12 @@ def _strongpatch_equal_basic_objects(objdst, objsrc):
             try:
                 output = fn(*_, **__)
                 return output
-            except Exception as e:
-                errlist.append(e)
+            except:
+                raise
             finally:
                 _memmove_unreplacement(*memmove_backup, objdst)
-            raise errlist[0]
         return wrappedfn
     return decorator
-
 
 strongpatch.object = _strongpatch_object
 strongpatch.dict = _patch_dict
