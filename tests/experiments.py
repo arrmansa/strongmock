@@ -5,6 +5,8 @@
 # https://github.com/arrmansa/modify-tuples-strings-inplace-python/blob/main/final_functions.py
 # https://docs.python.org/3/library/inspect.html
 # coverage run --source=src -m unittest discover --v
+# ruff check . --select=ALL --ignore=E501,PT,ANN,E731,D,EM,TRY,PLR
+
 
 fnsrc = lambda b, *_,a="a", **__: print("LOL")
 import inspect

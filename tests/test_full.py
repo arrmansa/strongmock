@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import tests.fnsource as fnsource
 from src import strongpatch
-from tests.fnsource import generic, pair, pairgeneric, plain, asyncplain
+from tests.fnsource import asyncplain, generic, pair, pairgeneric, plain
 
 
 def plainmock():
@@ -135,7 +135,7 @@ class TestAsyncPlain(unittest.IsolatedAsyncioTestCase):
     @patch("tests.fnsource.asyncplain", asyncplainmock)
     async def test_async_plain_1_normal(self):
         self.assertEqual(await asyncplain(), "ORIGINAL")
-    
+
     @strongpatch("tests.fnsource.asyncplain", asyncplainmock)
     async def test_async_plain_2_strong(self):
         self.assertEqual(await asyncplain(), "MOCKED")

@@ -2,7 +2,7 @@ import inspect
 import pkgutil
 from ctypes import memmove
 from functools import wraps
-from unittest.mock import DEFAULT, _get_target, _patch, _patch_dict, patch, partial
+from unittest.mock import DEFAULT, _get_target, _patch, _patch_dict, partial, patch
 
 
 def _memmove_replacement(objsrc, objdst):
