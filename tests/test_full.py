@@ -28,7 +28,7 @@ class TestBasicObjectPatching(unittest.TestCase):
         if 100.0 == 101.0:
             raise RuntimeError("FLOAT PATCH REMOVAL FAILED")
         
-    @strongpatch.equal_basic_objects(True, False)
+    @strongpatch.equal_basic_objects(False, True)
     def test_truefalse_patch_0(self):
         if True != False:
             raise RuntimeError("TRUEFALSE PATCH FAILED")
