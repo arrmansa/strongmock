@@ -1,6 +1,3 @@
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
 [project]
 name = "strongmock"
 version = "0.0.1"
@@ -9,12 +6,17 @@ authors = [
 ]
 description = "StrongMock is a powerful mocking library for Python that leverages low-level ctypes functionality to provide extensive mocking capabilities. Some care may be needed while using this."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.7"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
 ]
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+[tool.setuptools]
+package-dir={"strongmock"="src"}
 [project.urls]
 "Homepage" = "https://github.com/arrmansa/strongmock"
 "Bug Tracker" = "https://github.com/arrmansa/strongmock/issues"

@@ -1,0 +1,9 @@
+LICENSE
+README.md
+pyproject.toml
+src/__init__.py
+strongmock.egg-info/PKG-INFO
+strongmock.egg-info/SOURCES.txt
+strongmock.egg-info/dependency_links.txt
+strongmock.egg-info/top_level.txt
+tests/test_full.py

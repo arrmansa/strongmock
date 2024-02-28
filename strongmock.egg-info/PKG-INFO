@@ -1,0 +1,22 @@
+Metadata-Version: 2.1
+Name: strongmock
+Version: 0.0.1
+Summary: StrongMock is a powerful mocking library for Python that leverages low-level ctypes functionality to provide extensive mocking capabilities. Some care may be needed while using this.
+Author-email: Arrman Anicket Saha <arrmansa99+430@gmail.com>
+Project-URL: Homepage, https://github.com/arrmansa/strongmock
+Project-URL: Bug Tracker, https://github.com/arrmansa/strongmock/issues
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+# StrongMock
+StrongMock is a powerful mocking library for Python that leverages low-level ctypes functionality to provide extensive mocking capabilities. Some care may be needed while using this.
+
+# Functionality
+This will patch the `__code__` attribute of a function with your new function, meaning that references will also have the functionality of mock. This can occasionally be extremely convenient.
+
+# Usage
+instead of `unittest.mock.patch` use `strongmock.strongpatch`
