@@ -6,9 +6,9 @@
 # https://docs.python.org/3/library/inspect.html
 # coverage run --source=src -m unittest discover --v
 # ruff check . --select=ALL --ignore=E501,PT,ANN,E731,D,EM,TRY,PLR
+# black . --line-length 1000 --skip-magic-trailing-comma
 
-
-fnsrc = lambda b, *_,a="a", **__: print("LOL")
+fnsrc = lambda b, *_, a="a", **__: print("LOL")
 import inspect
 
 quit()
@@ -42,8 +42,8 @@ l_replacement = some().fn#lambda_store[0]
 l_replacement.__self__ = fnsrc
 """
 
-#lambda_store = [lambda x=fnsrc: x()]
-#l_replacement = lambda_store[0]#some().fn#lambda_store[0]
+# lambda_store = [lambda x=fnsrc: x()]
+# l_replacement = lambda_store[0]#some().fn#lambda_store[0]
 dis.dis(l_replacement)
 print(l_replacement.__code__.__sizeof__())
 
@@ -65,21 +65,22 @@ quit()
 print((100).__sizeof__())
 
 
-
-
-
 print("a" == "b")
 print(dir(str.__eq__))
 print(dir(str))
 print(dir(str.upper))
 print(id(str), id(str.__eq__))
+
+
 class n:
     __eq__ = lambda *_: True
+
+
 new = lambda *_: True
-memmove(id(str.__eq__)-500, id(new)-500, new.__sizeof__()+1000)
+memmove(id(str.__eq__) - 500, id(new) - 500, new.__sizeof__() + 1000)
 new = lambda *_: True
-#memmove(id(str)+24, id(n)+24, 100)
-memmove(id(str)+48, id(n)+48, 75)
+# memmove(id(str)+24, id(n)+24, 100)
+memmove(id(str) + 48, id(n) + 48, 75)
 print("a" == "b")
 quit(0)
 

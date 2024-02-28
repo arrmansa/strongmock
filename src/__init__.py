@@ -14,6 +14,7 @@ def _memmove_replacement(objsrc, objdst):
     memmove(id(objdst), id(objsrc), obj_size)
     return obj_size, dstobj_byte_storage
 
+
 def _memmove_unreplacement(objsize, dst_byte_storage, objdst):
     offset = dst_byte_storage.__sizeof__() - objsize
     memmove(id(objdst), id(dst_byte_storage) + offset, objsize)
@@ -31,15 +32,11 @@ def get_definition_requirements(fnsrc):
         keyword_needed = False
     return position_needed, keyword_needed
 
-def strongpatch(
-    target, new=DEFAULT, spec=None, create=False,
-    spec_set=None, autospec=None, new_callable=None, **kwargs,
-):
+
+def strongpatch(target, new=DEFAULT, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, **kwargs):
     getter, attribute = _get_target(target)
-    return _strongpatch(
-        getter, attribute, new, spec, create,
-        spec_set, autospec, new_callable, kwargs,
-    )
+    return _strongpatch(getter, attribute, new, spec, create, spec_set, autospec, new_callable, kwargs)
+
 
 class _strongpatch(_patch):
 
@@ -47,11 +44,7 @@ class _strongpatch(_patch):
     _active_patches = []
 
     def copy(self):
-        patcher = _strongpatch(
-            self.getter, self.attribute, self.new, self.spec,
-            self.create, self.spec_set,
-            self.autospec, self.new_callable, self.kwargs,
-        )
+        patcher = _strongpatch(self.getter, self.attribute, self.new, self.spec, self.create, self.spec_set, self.autospec, self.new_callable, self.kwargs)
         patcher.attribute_name = self.attribute_name
         patcher.additional_patchers = [p.copy() for p in self.additional_patchers]
         return patcher
@@ -89,7 +82,6 @@ class _strongpatch(_patch):
             self.lambda_store = [lambda __replacementfunc__=fnsrc: __replacementfunc__()]
         l_replacement = self.lambda_store[0]
 
-
         # Store original defaults
         self.original__self__ = getattr(fndest, "__self__", None)
         self.original__defaults__ = fndest.__defaults__
@@ -108,57 +100,44 @@ class _strongpatch(_patch):
             fndest.__kwdefaults__ = self.original__kwdefaults__
             _memmove_unreplacement(*self.memmove_backup, fndest.__code__)
 
-def _strongpatch_object(
-        target, attribute, new=DEFAULT, spec=None,
-        create=False, spec_set=None, autospec=None,
-        new_callable=None, *, unsafe=False, **kwargs,
-    ):
-    if type(target) is str:
-        raise TypeError(
-            f"{target!r} must be the actual object to be patched, not a str",
-        )
-    getter = lambda: target
-    return _strongpatch(
-        getter, attribute, new, spec, create,
-        spec_set, autospec, new_callable, kwargs,
-    )
 
-def _strongpatch_multiple(target, spec=None, create=False, spec_set=None,
-                    autospec=None, new_callable=None, **kwargs):
+def _strongpatch_object(target, attribute, new=DEFAULT, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, *, unsafe=False, **kwargs):
+    if type(target) is str:
+        raise TypeError(f"{target!r} must be the actual object to be patched, not a str")
+    getter = lambda: target
+    return _strongpatch(getter, attribute, new, spec, create, spec_set, autospec, new_callable, kwargs)
+
+
+def _strongpatch_multiple(target, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, **kwargs):
     if type(target) is str:
         getter = partial(pkgutil.resolve_name, target)
     else:
         getter = lambda: target
 
     if not kwargs:
-        raise ValueError(
-            "Must supply at least one keyword argument with patch.multiple",
-        )
+        raise ValueError("Must supply at least one keyword argument with patch.multiple")
     # need to wrap in a list for python 3, where items is a view
     items = list(kwargs.items())
     attribute, new = items[0]
-    patcher = _strongpatch(
-        getter, attribute, new, spec, create, spec_set,
-        autospec, new_callable, {},
-    )
+    patcher = _strongpatch(getter, attribute, new, spec, create, spec_set, autospec, new_callable, {})
     patcher.attribute_name = attribute
     for attribute, new in items[1:]:
-        this_patcher = _strongpatch(
-            getter, attribute, new, spec, create, spec_set,
-            autospec, new_callable, {},
-        )
+        this_patcher = _strongpatch(getter, attribute, new, spec, create, spec_set, autospec, new_callable, {})
         this_patcher.attribute_name = attribute
         patcher.additional_patchers.append(this_patcher)
     return patcher
+
 
 def _strongpatch_stopall():
     """Stop all active patches. LIFO to unroll nested patches."""
     for patch in reversed(_strongpatch._active_patches):
         patch.stop()
 
+
 def _strongpatch_equal_basic_objects(objsrc, objdst):
     if objdst.__sizeof__() < objsrc.__sizeof__():
         raise RuntimeWarning("objsrc is bigger than objdst. This may cause segfaults")
+
     def decorator(fn):
         @wraps(fn)
         def wrappedfn(*_, **__):
@@ -169,8 +148,11 @@ def _strongpatch_equal_basic_objects(objsrc, objdst):
                 raise
             finally:
                 _memmove_unreplacement(*memmove_backup, objdst)
+
         return wrappedfn
+
     return decorator
+
 
 strongpatch.object = _strongpatch_object
 strongpatch.dict = _patch_dict

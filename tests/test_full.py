@@ -9,15 +9,16 @@ from tests.fnsource import asyncplain, generic, pair, pairgeneric, plain
 def plainmock():
     return "MOCKED"
 
+
 async def asyncplainmock():
     return "MOCKED"
+
 
 def genericmock(a, *args, b="d", c="c", **kwargs):
     return a + "MOCKED" + b + c + str((args, kwargs))
 
 
 pairgenericmock = pair(genericmock)
-
 
 
 class TestBasic(unittest.TestCase):
@@ -40,6 +41,7 @@ class TestBasic(unittest.TestCase):
 
     def test_plain_4_after(self):
         self.assertEqual(plain(), "ORIGINAL")
+
 
 class TestBasicObjectPatching(unittest.TestCase):
 
