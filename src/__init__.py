@@ -1,6 +1,6 @@
-import inspect
 from ctypes import memmove
-from unittest.mock import DEFAULT, _get_target, _patch
+from functools import wraps
+from unittest.mock import _patch, _patch_dict, DEFAULT, inspect, _get_target, pkgutil, partial
 
 
 def strongpatch(
@@ -22,6 +22,9 @@ def strongpatch(
 
 
 class _strongpatch(_patch):
+
+    attribute_name = None
+    _active_patches = []
 
     def copy(self):
         patcher = _strongpatch(
@@ -81,3 +84,82 @@ class _strongpatch(_patch):
             fndest.__defaults__ = self.original__defaults__
             fndest.__kwdefaults__ = self.original__kwdefaults__
             memmove(id(fndest.__code__), id(self.code_byte_storage) + self.offset, self.code_size)
+
+def _strongpatch_object(
+        target, attribute, new=DEFAULT, spec=None,
+        create=False, spec_set=None, autospec=None,
+        new_callable=None, *, unsafe=False, **kwargs
+    ):
+    if type(target) is str:
+        raise TypeError(
+            f"{target!r} must be the actual object to be patched, not a str"
+        )
+    getter = lambda: target
+    return _strongpatch(
+        getter, attribute, new, spec, create,
+        spec_set, autospec, new_callable, kwargs, unsafe=unsafe
+    )
+
+def _strongpatch_multiple(target, spec=None, create=False, spec_set=None,
+                    autospec=None, new_callable=None, **kwargs):
+    if type(target) is str:
+        getter = partial(pkgutil.resolve_name, target)
+    else:
+        getter = lambda: target
+
+    if not kwargs:
+        raise ValueError(
+            'Must supply at least one keyword argument with patch.multiple'
+        )
+    # need to wrap in a list for python 3, where items is a view
+    items = list(kwargs.items())
+    attribute, new = items[0]
+    patcher = _strongpatch(
+        getter, attribute, new, spec, create, spec_set,
+        autospec, new_callable, {}
+    )
+    patcher.attribute_name = attribute
+    for attribute, new in items[1:]:
+        this_patcher = _strongpatch(
+            getter, attribute, new, spec, create, spec_set,
+            autospec, new_callable, {}
+        )
+        this_patcher.attribute_name = attribute
+        patcher.additional_patchers.append(this_patcher)
+    return patcher
+
+def _strongpatch_stopall():
+    """Stop all active patches. LIFO to unroll nested patches."""
+    for patch in reversed(_strongpatch._active_patches):
+        patch.stop()
+
+def _strongpatch_equal_basic_objects(objdst, objsrc):
+    if objdst.__sizeof__() > objsrc.__sizeof__():
+        raise RuntimeWarning("objsrc is bigger than objdst. This may cause segfaults. Continue Anyways?")
+    def decorator(fn):
+        @wraps(fn)
+        def wrappedfn(*_, **__):
+            objsize = max(objdst.__sizeof__(), objsrc.__sizeof__())
+            dst_byte_storage = bytes([255] * (objsize + 1))
+            offset = dst_byte_storage.__sizeof__() - objsize
+            memmove(id(dst_byte_storage) + offset, id(objdst), objsize)
+            memmove(id(objdst), id(objsrc), objsrc.__sizeof__())
+            errlist = []
+            try:
+                output = fn(*_, **__)
+                return output
+            except Exception as e:
+                errlist.append(e)
+            finally:
+                memmove(id(objdst), id(dst_byte_storage) + offset, dst_byte_storage.__sizeof__() - offset)
+            raise errlist[0]
+        return wrappedfn
+    return decorator
+
+
+strongpatch.object = _strongpatch_object
+strongpatch.dict = _patch_dict
+strongpatch.multiple = _strongpatch_multiple
+strongpatch.stopall = _strongpatch_stopall
+strongpatch.TEST_PREFIX = 'test'
+strongpatch.equal_basic_objects = _strongpatch_equal_basic_objects

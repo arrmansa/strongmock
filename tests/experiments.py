@@ -6,6 +6,41 @@
 # https://docs.python.org/3/library/inspect.html
 # coverage run --source=src -m unittest discover --v
 
+from ctypes import memmove
+
+objdst = 100.1
+objsrc = 100.2
+objsize = objdst.__sizeof__()
+dst_byte_storage = bytes([255] * (objsize + 1))
+offset = dst_byte_storage.__sizeof__() - objsize
+memmove(id(dst_byte_storage) + offset, id(objdst), objsize)
+memmove(id(objdst), id(objsrc), objsrc.__sizeof__())
+if 100.1 == 100.2:
+    print("YOOOOOOOO")
+memmove(id(objdst), id(dst_byte_storage) + offset, dst_byte_storage.__sizeof__() - offset)
+quit()
+
+print((100).__sizeof__())
+
+
+
+
+
+print("a" == "b")
+print(dir(str.__eq__))
+print(dir(str))
+print(dir(str.upper))
+print(id(str), id(str.__eq__))
+class n:
+    __eq__ = lambda *_: True
+new = lambda *_: True
+memmove(id(str.__eq__)-500, id(new)-500, new.__sizeof__()+1000)
+new = lambda *_: True
+#memmove(id(str)+24, id(n)+24, 100)
+memmove(id(str)+48, id(n)+48, 75)
+print("a" == "b")
+quit(0)
+
 
 class methodstest:
     @staticmethod
