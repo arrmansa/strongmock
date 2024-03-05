@@ -21,7 +21,7 @@ def genericmock(a, *args, b="d", c="c", **kwargs):
 pairgenericmock = pair(genericmock)
 
 
-class TestBasic(unittest.TestCase):
+class TestFunctionPatch(unittest.TestCase):
 
     @patch("tests.fnsource.plain", plainmock)
     def test_plain_0_mockfail(self):
@@ -43,7 +43,27 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(plain(), "ORIGINAL")
 
 
+class TestImportPatch(unittest.TestCase):
+
+    @strongpatch.mock_imports(("somelib_abcd", "somelib_abcef", "tests.fnsource"))
+    def test_plain_1_mockwork(self):
+        import somelib_abcd
+        from somelib_abcef.test1 import test2
+        from tests.fnsource import plain
+        self.assertIsInstance(somelib_abcd.somefn(), MagicMock)
+        self.assertIsInstance(plain, MagicMock)
+
+    def test_plain_2_after(self):
+        with self.assertRaises(ImportError):
+            import somelib_abcd
+        with self.assertRaises(ImportError):
+            import somelib_abcef
+        from tests.fnsource import plain
+        self.assertNotIsInstance(plain, MagicMock)
+
 class TestBasicObjectPatching(unittest.TestCase):
+
+    # Can't use self.assertEqual for these because assertEqual can be patched and will not show that we can patch == of floats/ints/truefalse
 
     @strongpatch.equal_basic_objects(100.0, 101.0)
     def test_float_patch_0(self):

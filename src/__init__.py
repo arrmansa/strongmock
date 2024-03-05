@@ -1,8 +1,10 @@
 import inspect
+import sys
+import builtins
 import pkgutil
 from ctypes import memmove
 from functools import wraps
-from unittest.mock import DEFAULT, _get_target, _patch, _patch_dict, partial, patch
+from unittest.mock import DEFAULT, MagicMock, _get_target, _patch, _patch_dict, partial, patch
 
 
 def _memmove_replacement(objsrc, objdst):
@@ -31,12 +33,6 @@ def get_definition_requirements(fnsrc):
     else:
         keyword_needed = False
     return position_needed, keyword_needed
-
-
-def strongpatch(target, new=DEFAULT, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, **kwargs):
-    getter, attribute = _get_target(target)
-    return _strongpatch(getter, attribute, new, spec, create, spec_set, autospec, new_callable, kwargs)
-
 
 class _strongpatch(_patch):
 
@@ -101,62 +97,114 @@ class _strongpatch(_patch):
             _memmove_unreplacement(*self.memmove_backup, fndest.__code__)
 
 
-def _strongpatch_object(target, attribute, new=DEFAULT, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, *, unsafe=False, **kwargs):
-    if type(target) is str:
-        raise TypeError(f"{target!r} must be the actual object to be patched, not a str")
-    getter = lambda: target
-    return _strongpatch(getter, attribute, new, spec, create, spec_set, autospec, new_callable, kwargs)
 
+class strongpatch:
 
-def _strongpatch_multiple(target, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, **kwargs):
-    if type(target) is str:
-        getter = partial(pkgutil.resolve_name, target)
-    else:
+    def __new__(cls, target, new=DEFAULT, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, **kwargs):
+        getter, attribute = _get_target(target)
+        return _strongpatch(getter, attribute, new, spec, create, spec_set, autospec, new_callable, kwargs)
+    
+    @wraps(patch.dict)
+    @staticmethod
+    def dict(*_, **__):
+        _patch_dict(*_, **__)
+
+    @wraps(patch.object)
+    @staticmethod
+    def object(target, attribute, new=DEFAULT, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, *, unsafe=False, **kwargs):
+        if type(target) is str:
+            raise TypeError(f"{target!r} must be the actual object to be patched, not a str")
         getter = lambda: target
+        return _strongpatch(getter, attribute, new, spec, create, spec_set, autospec, new_callable, kwargs)
 
-    if not kwargs:
-        raise ValueError("Must supply at least one keyword argument with patch.multiple")
-    # need to wrap in a list for python 3, where items is a view
-    items = list(kwargs.items())
-    attribute, new = items[0]
-    patcher = _strongpatch(getter, attribute, new, spec, create, spec_set, autospec, new_callable, {})
-    patcher.attribute_name = attribute
-    for attribute, new in items[1:]:
-        this_patcher = _strongpatch(getter, attribute, new, spec, create, spec_set, autospec, new_callable, {})
-        this_patcher.attribute_name = attribute
-        patcher.additional_patchers.append(this_patcher)
-    return patcher
+    @wraps(patch.multiple)
+    @staticmethod
+    def multiple(target, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, **kwargs):
+        if type(target) is str:
+            getter = partial(pkgutil.resolve_name, target)
+        else:
+            getter = lambda: target
 
+        if not kwargs:
+            raise ValueError("Must supply at least one keyword argument with patch.multiple")
+        # need to wrap in a list for python 3, where items is a view
+        items = list(kwargs.items())
+        attribute, new = items[0]
+        patcher = _strongpatch(getter, attribute, new, spec, create, spec_set, autospec, new_callable, {})
+        patcher.attribute_name = attribute
+        for attribute, new in items[1:]:
+            this_patcher = _strongpatch(getter, attribute, new, spec, create, spec_set, autospec, new_callable, {})
+            this_patcher.attribute_name = attribute
+            patcher.additional_patchers.append(this_patcher)
+        return patcher
 
-def _strongpatch_stopall():
-    """Stop all active patches. LIFO to unroll nested patches."""
-    for patch in reversed(_strongpatch._active_patches):
-        patch.stop()
+    @wraps(patch.stopall)
+    @staticmethod
+    def stopall():
+        for strongpatch in reversed(_strongpatch._active_patches):
+            strongpatch.stop()
 
+    @staticmethod
+    def equal_basic_objects(objsrc, objdst, skip_check=False):
+        if skip_check and (objdst.__sizeof__() < objsrc.__sizeof__()):
+            raise RuntimeWarning("objsrc is bigger than objdst. This may cause segfaults")
 
-def _strongpatch_equal_basic_objects(objsrc, objdst):
-    if objdst.__sizeof__() < objsrc.__sizeof__():
-        raise RuntimeWarning("objsrc is bigger than objdst. This may cause segfaults")
+        def decorator(fn):
+            @wraps(fn)
+            def wrappedfn(*_, **__):
+                memmove_backup = _memmove_replacement(objsrc, objdst)
+                try:
+                    return fn(*_, **__)
+                except:
+                    raise
+                finally:
+                    _memmove_unreplacement(*memmove_backup, objdst)
 
-    def decorator(fn):
-        @wraps(fn)
-        def wrappedfn(*_, **__):
-            memmove_backup = _memmove_replacement(objsrc, objdst)
-            try:
-                return fn(*_, **__)
-            except:
-                raise
-            finally:
-                _memmove_unreplacement(*memmove_backup, objdst)
+            return wrappedfn
 
-        return wrappedfn
+        return decorator
 
-    return decorator
+    class mock_imports:
 
+        def __init__(self, module_names, override=True):
+            self.module_names = module_names
+            self.override = override
+            
 
-strongpatch.object = _strongpatch_object
-strongpatch.dict = _patch_dict
-strongpatch.multiple = _strongpatch_multiple
-strongpatch.stopall = _strongpatch_stopall
-strongpatch.TEST_PREFIX = patch.TEST_PREFIX
-strongpatch.equal_basic_objects = _strongpatch_equal_basic_objects
+        def __call__(self, somefn):
+            @wraps(somefn)
+            def newfn(*_, **__):
+                self.mock_before_call()
+                try:
+                    return somefn(*_, **__)
+                except:
+                    raise
+                finally:
+                    self.unmock_after_call()
+            return newfn
+            
+        def mock_before_call(self):
+            self.original_import = builtins.__import__
+            self.added_names = {}
+            def _import(name, *args, **kwargs):
+                if any(map(name.startswith, self.module_names)):
+                    if name not in sys.modules:
+                        self.added_names[name] = None
+                        sys.modules[name] = MagicMock(spec=None)
+                    else:
+                        if not isinstance(sys.modules[name], MagicMock):
+                            self.added_names[name] = sys.modules[name]
+                            sys.modules[name] = MagicMock(spec=None)
+                        return sys.modules[name]
+                    return sys.modules[name]
+                else:
+                    return self.original_import(name, *args, **kwargs)
+            builtins.__import__ = _import
+
+        def unmock_after_call(self):
+            builtins.__import__ = self.original_import
+            for name, value in self.added_names.items():
+                if value is None:
+                    del sys.modules[name]
+                else:
+                    sys.modules[name] = value

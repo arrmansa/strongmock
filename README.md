@@ -41,7 +41,7 @@ This can be extremely convenient in some cases.
 
 We dump the bytes from objsrc to objdst
 
-### What??!
+### huh?
 
 Yes, you can now pass these testcases.
 
@@ -51,8 +51,7 @@ from strongmock import strongpatch
 class StrongMockDemoTest(unittest.TestCase):
     @strongpatch.equal_basic_objects(True, False)
     def test_true_and_false_are_equal(self):
-        if True != False:
-            raise RuntimeError("true is equal to false")
+        self.True != False:
 ```
 
 # Links
@@ -63,5 +62,5 @@ class StrongMockDemoTest(unittest.TestCase):
 StrongMock is licensed under the Unlicense. See the LICENSE file for details.
 
 # Official theme music
-When using these methods, it is reccomended that you listen to this for better code. \
+When using these methods, it is recommended that you listen to this for better code. \
 [Kai's Theme Epic Version (Slowed + BassBoosted)](https://www.youtube.com/watch?v=uMvNQRSKccg)
