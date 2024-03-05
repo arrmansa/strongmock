@@ -1,6 +1,6 @@
 [project]
 name = "strongmock"
-version = "0.0.5"
+version = "0.0.6"
 authors = [
   { name="Arrman Anicket Saha", email="arrmansa99+430@gmail.com" },
 ]

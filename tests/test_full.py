@@ -53,6 +53,11 @@ class TestImportPatch(unittest.TestCase):
         self.assertIsInstance(somelib_abcd.somefn(), MagicMock)
         self.assertIsInstance(plain, MagicMock)
 
+    @strongpatch.mock_imports(("tests.fnsource",), override=False)
+    def test_plain_2_after(self):
+        from tests.fnsource import plain
+        self.assertNotIsInstance(plain, MagicMock)
+
     def test_plain_2_after(self):
         with self.assertRaises(ImportError):
             import somelib_abcd
