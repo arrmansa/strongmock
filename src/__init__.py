@@ -1,11 +1,15 @@
 import inspect
 import sys
 import builtins
-import pkgutil
 from ctypes import memmove
-from functools import wraps, partial
-from unittest.mock import DEFAULT, MagicMock, _get_target, _patch, _patch_dict
+from functools import wraps
 
+# "imports _patch and" patch from unittest by redefining them in current module
+_patch, patch = object, None
+import unittest.mock
+exec(inspect.getsource(unittest.mock), globals()) 
+
+from unittest.mock import MagicMock
 
 class memmove_objects:
     """
@@ -85,14 +89,7 @@ def get_definition_requirements(fnsrc):
     keyword_needed = any(map(argtypes.__contains__, keyword_test))
     return position_needed, keyword_needed
 
-
-class _strongpatch(_patch):
-
-    def copy(self):
-        patcher = _strongpatch(self.getter, self.attribute, self.new, self.spec, self.create, self.spec_set, self.autospec, self.new_callable, self.kwargs)
-        patcher.attribute_name = self.attribute_name
-        patcher.additional_patchers = [p.copy() for p in self.additional_patchers]
-        return patcher
+class _patch(_patch):
 
     def __enter__(self):
         super().__enter__()
@@ -143,52 +140,12 @@ class _strongpatch(_patch):
         fndest.__defaults__, fndest.__kwdefaults__ = original_defaults
         memmove_backup.__exit__()
 
+def equal_basic_objects(objsrc, objdst, skip_check=False):
+    if not skip_check and (objdst.__sizeof__() < objsrc.__sizeof__()):
+        raise RuntimeWarning("objsrc is bigger than objdst. This may cause segfaults")
+    return memmove_objects(objsrc, objdst)
 
-class strongpatch:
-    def __new__(cls, target, new=DEFAULT, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, **kwargs):
-        getter, attribute = _get_target(target)
-        return _strongpatch(getter, attribute, new, spec, create, spec_set, autospec, new_callable, kwargs)
+patch.equal_basic_objects = equal_basic_objects
+patch.mock_imports = mock_imports
 
-    @staticmethod
-    def dict(*_, **__):
-        _patch_dict(*_, **__)
-
-    @staticmethod
-    def object(target, attribute, new=DEFAULT, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, *, unsafe=False, **kwargs):
-        if type(target) is str:
-            raise TypeError(f"{target!r} must be the actual object to be patched, not a str")
-        getter = lambda: target
-        return _strongpatch(getter, attribute, new, spec, create, spec_set, autospec, new_callable, kwargs)
-
-    @staticmethod
-    def multiple(target, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, **kwargs):
-        if type(target) is str:
-            getter = partial(pkgutil.resolve_name, target)
-        else:
-            getter = lambda: target
-
-        if not kwargs:
-            raise ValueError("Must supply at least one keyword argument with patch.multiple")
-        # need to wrap in a list for python 3, where items is a view
-        items = list(kwargs.items())
-        attribute, new = items[0]
-        patcher = _strongpatch(getter, attribute, new, spec, create, spec_set, autospec, new_callable, {})
-        patcher.attribute_name = attribute
-        for attribute, new in items[1:]:
-            this_patcher = _strongpatch(getter, attribute, new, spec, create, spec_set, autospec, new_callable, {})
-            this_patcher.attribute_name = attribute
-            patcher.additional_patchers.append(this_patcher)
-        return patcher
-
-    @staticmethod
-    def stopall():
-        for strongpatch in reversed(_strongpatch._active_patches):
-            strongpatch.stop()
-
-    @staticmethod
-    def equal_basic_objects(objsrc, objdst, skip_check=False):
-        if skip_check and (objdst.__sizeof__() < objsrc.__sizeof__()):
-            raise RuntimeWarning("objsrc is bigger than objdst. This may cause segfaults")
-        return memmove_objects(objsrc, objdst)
-
-    mock_imports = mock_imports
+strongpatch = patch

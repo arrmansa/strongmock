@@ -7,9 +7,13 @@
 # coverage run --source=src -m unittest discover --v
 # ruff check . --select=ALL --ignore=E501,PT,ANN,E731,D,EM,TRY,PLR
 # black . --line-length 1000 --skip-magic-trailing-comma
+from tests.test_full import argsonly, kwargsonly
+from src import get_definition_requirements
+print(get_definition_requirements(argsonly))
+print(get_definition_requirements(kwargsonly))
+quit()
 
 fnsrc = lambda b, *_, a="a", **__: print("LOL")
-import inspect
 
 quit()
 

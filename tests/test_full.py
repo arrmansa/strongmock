@@ -1,10 +1,15 @@
 import unittest
 from unittest.mock import MagicMock, patch
+from src import strongpatch
 
 import tests.fnsource as fnsource
-from src import strongpatch
 from tests.fnsource import asyncplain, generic, pair, pairgeneric, plain
 
+def argsonly(x,/):
+    return "MOCKED" + str(x)
+
+def kwargsonly(*,x="abc"):
+    return "MOCKED" + str(x)
 
 def plainmock():
     return "MOCKED"
@@ -19,7 +24,6 @@ def genericmock(a, *args, b="d", c="c", **kwargs):
 
 
 pairgenericmock = pair(genericmock)
-
 
 class TestFunctionPatch(unittest.TestCase):
 
@@ -47,6 +51,7 @@ class TestImportPatch(unittest.TestCase):
 
     @strongpatch.mock_imports(("somelib_abcd", "somelib_abcef", "tests.fnsource"))
     def test_plain_1_mockwork(self):
+        import math
         import somelib_abcd
         from somelib_abcef.test1 import test2
         from tests.fnsource import plain
@@ -97,6 +102,10 @@ class TestBasicObjectPatching(unittest.TestCase):
         if 37838 == 2673229:
             raise RuntimeError("INT PATCH REMOVAL FAILED")
 
+    def test_patch_big_small_error(self):
+        with self.assertRaises(RuntimeWarning):
+            with strongpatch.equal_basic_objects("fhudfoiogfbihbnjdsofdhi", "hfuhduh"):
+                pass
 
 class TestArgsKwargs(unittest.TestCase):
 
@@ -125,6 +134,30 @@ class TestArgsKwargs(unittest.TestCase):
         self.assertEqual(generic("a", b="c"), "aORIGINALc((), {})")
         self.assertEqual(generic("a", "x", b="c", y="z"), "aORIGINALc(('x',), {'y': 'z'})")
 
+class TestArgsOnly(unittest.TestCase):
+
+    def test_0_before(self):
+        self.assertEqual(generic("a"), "aORIGINALb((), {})")
+
+    @strongpatch("tests.fnsource.generic", argsonly)
+    def test_1_mocked(self):
+        self.assertEqual(generic("a"), "MOCKEDa")
+
+    def test_2_after(self):
+        self.assertEqual(generic("a"), "aORIGINALb((), {})")
+
+
+class TestKwArgsOnly(unittest.TestCase):
+
+    def test_0_before(self):
+        self.assertEqual(generic("a"), "aORIGINALb((), {})")
+
+    @strongpatch("tests.fnsource.generic", kwargsonly)
+    def test_1_mocked(self):
+        self.assertEqual(generic(), "MOCKEDabc")
+
+    def test_2_after(self):
+        self.assertEqual(generic("a"), "aORIGINALb((), {})")
 
 class TestClosurePair(unittest.TestCase):
 
