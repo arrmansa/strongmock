@@ -9,6 +9,7 @@
 # black . --line-length 1000 --skip-magic-trailing-comma
 from tests.test_full import argsonly, kwargsonly
 from src import get_definition_requirements
+
 print(get_definition_requirements(argsonly))
 print(get_definition_requirements(kwargsonly))
 quit()

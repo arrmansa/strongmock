@@ -1,20 +1,21 @@
+import builtins
 import inspect
 import sys
-import builtins
+import unittest.mock
 from ctypes import memmove
 from functools import wraps
 
-# "imports _patch and" patch from unittest by redefining them in current module
-_patch, patch = object, None
-import unittest.mock
-exec(inspect.getsource(unittest.mock), globals()) 
+# "imports _patch and" patch from unittest by redefining them in current module, other
+_patch, patch = object, None  # these get defined in the next line
+exec(inspect.getsource(unittest.mock), globals())
+# isisntance compatibility
+Mock = unittest.mock.Mock
+MagicMock = unittest.mock.MagicMock
+AsyncMock = unittest.mock.AsyncMock
 
-from unittest.mock import MagicMock
 
 class memmove_objects:
-    """
-    A context manager and decorator for doing memmove on 2 objects.
-    """
+    """A context manager and decorator for doing memmove on 2 objects."""
 
     def __init__(self, objsrc, objdst):
         self.objsrc = objsrc
@@ -89,8 +90,8 @@ def get_definition_requirements(fnsrc):
     keyword_needed = any(map(argtypes.__contains__, keyword_test))
     return position_needed, keyword_needed
 
-class _patch(_patch):
 
+class _patch(_patch):
     def __enter__(self):
         super().__enter__()
         if inspect.isfunction(self.temp_original) and hasattr(self.temp_original, "__code__"):
@@ -105,10 +106,11 @@ class _patch(_patch):
 
     @staticmethod
     def replace_fn_code(fnsrc, fndest):
-        """
-        Args:
+        """Args:
+        ----
             fndest (function): a function that will have it's __code__ replaced
             fnsrc (function): a function that will be called instead
+
         """
         # A non-closure lambda function with __replacementfunc__ kwarg that will be the __code__ donor
         position_needed, keyword_needed = get_definition_requirements(fnsrc)
@@ -140,10 +142,12 @@ class _patch(_patch):
         fndest.__defaults__, fndest.__kwdefaults__ = original_defaults
         memmove_backup.__exit__()
 
+
 def equal_basic_objects(objsrc, objdst, skip_check=False):
     if not skip_check and (objdst.__sizeof__() < objsrc.__sizeof__()):
         raise RuntimeWarning("objsrc is bigger than objdst. This may cause segfaults")
     return memmove_objects(objsrc, objdst)
+
 
 patch.equal_basic_objects = equal_basic_objects
 patch.mock_imports = mock_imports

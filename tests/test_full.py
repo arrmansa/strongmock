@@ -5,11 +5,14 @@ from src import strongpatch
 import tests.fnsource as fnsource
 from tests.fnsource import asyncplain, generic, pair, pairgeneric, plain
 
-def argsonly(x,/):
+
+def argsonly(x, /):
     return "MOCKED" + str(x)
 
-def kwargsonly(*,x="abc"):
+
+def kwargsonly(*, x="abc"):
     return "MOCKED" + str(x)
+
 
 def plainmock():
     return "MOCKED"
@@ -25,8 +28,8 @@ def genericmock(a, *args, b="d", c="c", **kwargs):
 
 pairgenericmock = pair(genericmock)
 
-class TestFunctionPatch(unittest.TestCase):
 
+class TestFunctionPatch(unittest.TestCase):
     @patch("tests.fnsource.plain", plainmock)
     def test_plain_0_mockfail(self):
         self.assertEqual(plain(), "ORIGINAL")
@@ -48,19 +51,20 @@ class TestFunctionPatch(unittest.TestCase):
 
 
 class TestImportPatch(unittest.TestCase):
-
     @strongpatch.mock_imports(("somelib_abcd", "somelib_abcef", "tests.fnsource"))
     def test_plain_1_mockwork(self):
         import math
         import somelib_abcd
         from somelib_abcef.test1 import test2
         from tests.fnsource import plain
+
         self.assertIsInstance(somelib_abcd.somefn(), MagicMock)
         self.assertIsInstance(plain, MagicMock)
 
     @strongpatch.mock_imports(("tests.fnsource",), override=False)
     def test_plain_2_after(self):
         from tests.fnsource import plain
+
         self.assertNotIsInstance(plain, MagicMock)
 
     def test_plain_2_after(self):
@@ -69,10 +73,11 @@ class TestImportPatch(unittest.TestCase):
         with self.assertRaises(ImportError):
             import somelib_abcef
         from tests.fnsource import plain
+
         self.assertNotIsInstance(plain, MagicMock)
 
-class TestBasicObjectPatching(unittest.TestCase):
 
+class TestBasicObjectPatching(unittest.TestCase):
     # Can't use self.assertEqual for these because assertEqual can be patched and will not show that we can patch == of floats/ints/truefalse
 
     @strongpatch.equal_basic_objects(100.0, 101.0)
@@ -107,8 +112,8 @@ class TestBasicObjectPatching(unittest.TestCase):
             with strongpatch.equal_basic_objects("fhudfoiogfbihbnjdsofdhi", "hfuhduh"):
                 pass
 
-class TestArgsKwargs(unittest.TestCase):
 
+class TestArgsKwargs(unittest.TestCase):
     def test_generic_0_before(self):
         self.assertEqual(generic("a"), "aORIGINALb((), {})")
         self.assertEqual(generic("a", b="c"), "aORIGINALc((), {})")
@@ -134,8 +139,8 @@ class TestArgsKwargs(unittest.TestCase):
         self.assertEqual(generic("a", b="c"), "aORIGINALc((), {})")
         self.assertEqual(generic("a", "x", b="c", y="z"), "aORIGINALc(('x',), {'y': 'z'})")
 
-class TestArgsOnly(unittest.TestCase):
 
+class TestArgsOnly(unittest.TestCase):
     def test_0_before(self):
         self.assertEqual(generic("a"), "aORIGINALb((), {})")
 
@@ -148,7 +153,6 @@ class TestArgsOnly(unittest.TestCase):
 
 
 class TestKwArgsOnly(unittest.TestCase):
-
     def test_0_before(self):
         self.assertEqual(generic("a"), "aORIGINALb((), {})")
 
@@ -159,8 +163,8 @@ class TestKwArgsOnly(unittest.TestCase):
     def test_2_after(self):
         self.assertEqual(generic("a"), "aORIGINALb((), {})")
 
-class TestClosurePair(unittest.TestCase):
 
+class TestClosurePair(unittest.TestCase):
     def test_generic_0_before(self):
         self.assertEqual(pairgeneric("a"), "aORIGINALb((), {})" * 2)
         self.assertEqual(pairgeneric("a", b="c"), "aORIGINALc((), {})" * 2)
@@ -188,7 +192,6 @@ class TestClosurePair(unittest.TestCase):
 
 
 class TestAsyncPlain(unittest.IsolatedAsyncioTestCase):
-
     async def test_async_plain_0_before(self):
         self.assertEqual(await asyncplain(), "ORIGINAL")
 

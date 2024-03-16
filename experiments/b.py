@@ -11,7 +11,7 @@ print(a.f.__dict__)
 print(a.f)
 
 print(a.f.__globals__)
-#a.f.__globals__ = _source_a.f.__globals__.copy()
+# a.f.__globals__ = _source_a.f.__globals__.copy()
 object.__setattr__(a.f, "__globals__", _source_a.f.__globals__.copy())
 a.f.__globals__["a"] = a
 
